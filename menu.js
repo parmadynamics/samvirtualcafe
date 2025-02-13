@@ -291,17 +291,27 @@ class CafeManager {
 
   addTableItem(tableItem) {
     if (window.peacefulConnect && window.peacefulConnect.dataConnection) {
-      // Ensure image path starts with images/ before sending
+      // Ensure proper image path handling for special items
       if (tableItem.item.isSpecial && tableItem.item.icon) {
-        if (!tableItem.item.icon.startsWith('images/')) {
-          tableItem.item.icon = 'images/' + tableItem.item.icon.split('/').pop();
-        }
+        // Create a copy of the item to avoid modifying the original menu item
+        const itemToSend = {
+          ...tableItem,
+          item: {
+            ...tableItem.item,
+            icon: 'images/ring.gif' // Explicitly set the correct path
+          }
+        };
+        
+        window.peacefulConnect.dataConnection.send({
+          type: 'special-ring-delivery',
+          tableItem: itemToSend
+        });
+      } else {
+        window.peacefulConnect.dataConnection.send({
+          type: 'food-delivery',
+          tableItem: tableItem
+        });
       }
-      
-      window.peacefulConnect.dataConnection.send({
-        type: tableItem.item.isSpecial ? 'special-ring-delivery' : 'food-delivery',
-        tableItem: tableItem
-      });
     }
 
     // Add delay before triggering animation
@@ -355,10 +365,8 @@ class CafeManager {
   }
 
   triggerSpecialRingAnimation(tableItem) {
-    // Ensure correct image path
-    if (tableItem.item.icon && !tableItem.item.icon.startsWith('images/')) {
-      tableItem.item.icon = 'images/' + tableItem.item.icon.split('/').pop();
-    }
+    // Always use the correct path for ring image
+    const ringImagePath = 'images/ring.gif';
 
     const specialEffects = document.createElement('div');
     specialEffects.className = 'special-effects';
@@ -378,9 +386,7 @@ class CafeManager {
 
     const ringDelivery = document.createElement('div');
     ringDelivery.className = 'ring-delivery';
-    
-    // Use the corrected image path
-    ringDelivery.style.backgroundImage = `url(${tableItem.item.icon})`;
+    ringDelivery.style.backgroundImage = `url(${ringImagePath})`;
 
     document.body.appendChild(ringDelivery);
 
@@ -399,30 +405,29 @@ class CafeManager {
       specialEffects.remove();
       
       if (!this.tableItems.find(i => i.id === tableItem.id)) {
-        this.tableItems.push(tableItem);
+        this.tableItems.push({
+          ...tableItem,
+          item: {
+            ...tableItem.item,
+            icon: ringImagePath // Ensure consistent path in table items
+          }
+        });
         this.renderTableItems();
       }
     }, 15000);  
   }
 
   receiveFoodDelivery(data) {
-    // Ensure image path correction for received data
     if (data.type === 'special-ring-delivery') {
-      if (data.tableItem && data.tableItem.item && data.tableItem.item.icon) {
-        // Ensure path starts with images/
-        if (!data.tableItem.item.icon.startsWith('images/')) {
-          data.tableItem.item.icon = 'images/' + data.tableItem.item.icon.split('/').pop();
+      // Ensure the received data has the correct image path
+      const tableItem = {
+        ...data.tableItem,
+        item: {
+          ...data.tableItem.item,
+          icon: 'images/ring.gif' // Always use the correct path
         }
-      }
-      this.triggerSpecialRingAnimation(data.tableItem);
-    } else {
-      this.triggerFoodDeliveryAnimation(data.tableItem);
-    }
-  }
-
-  receiveFoodDelivery(data) {
-    if (data.type === 'special-ring-delivery') {
-      this.triggerSpecialRingAnimation(data.tableItem);
+      };
+      this.triggerSpecialRingAnimation(tableItem);
     } else {
       this.triggerFoodDeliveryAnimation(data.tableItem);
     }
