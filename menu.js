@@ -54,11 +54,10 @@ class CafeMenu {
         id: 8,
         name: "💝 Special Ring",
         price: 500,
-        icon: "images/ring.gif",
+        icon: "images/ring.gif", 
         description: "A magical moment awaits",
         isSpecial: true
       }
-
     ];
   }
 
@@ -229,6 +228,11 @@ class CafeManager {
   }
 
   receiveTableItem(tableItem) {
+    // Ensure consistent path for ring when receiving table item
+    if (tableItem.item.isSpecial) {
+      tableItem.item.icon = 'images/ring.gif';
+    }
+    
     if (!this.tableItems.find(i => i.id === tableItem.id)) {
       this.tableItems.push(tableItem);
       this.renderTableItems();
@@ -281,30 +285,37 @@ class CafeManager {
 
     tableItemsContainer.innerHTML = this.tableItems
       .filter(item => !item.eaten)
-      .map(item => `
-        <div class="food-item" onclick="cafeManager.eatItem(${item.id})">
-          <img src="${item.item.icon}" alt="${item.item.name}" style="width: 200px; height: 200px;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMTQ5MyIgZD0iTTggMThoOHYtMkg4djJ6bTAtNGg4di0ySDh2MnptMC00aDh2LTJIOHYyem0tMiA4YzAtMS4xLjktMiAyLTJoOGMxLjEgMCAyIC45IDIgMkg2eiIvPjwvc3ZnPg=='">
-          <div class="food-name">${item.item.name}</div>
-        </div>
-      `).join('');
+      .map(item => {
+        // Always use the correct path for ring items
+        const imageSrc = item.item.isSpecial ? 'images/ring.gif' : item.item.icon;
+        return `
+          <div class="food-item" onclick="cafeManager.eatItem(${item.id})">
+            <img src="${imageSrc}" alt="${item.item.name}" style="width: 200px; height: 200px;" 
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMTQ5MyIgZD0iTTggMThoOHYtMkg4djJ6bTAtNGg4di0ySDh2MnptMC00aDh2LTJIOHYyem0tMiA4YzAtMS4xLjktMiAyLTJoOGMxLjEgMCAyIC45IDIgMkg2eiIvPjwvc3ZnPg=='">
+            <div class="food-name">${item.item.name}</div>
+          </div>
+        `;
+      }).join('');
   }
 
   addTableItem(tableItem) {
     if (window.peacefulConnect && window.peacefulConnect.dataConnection) {
-      // Ensure proper image path handling for special items
-      if (tableItem.item.isSpecial && tableItem.item.icon) {
-        // Create a copy of the item to avoid modifying the original menu item
-        const itemToSend = {
+      // For ring items, ensure we send the correct image path
+      if (tableItem.item.isSpecial) {
+        const ringData = {
           ...tableItem,
           item: {
             ...tableItem.item,
-            icon: 'images/ring.gif' // Explicitly set the correct path
+            icon: 'images/ring.gif',
+            isSpecial: true
           }
         };
+        this.tableItems.push(ringData); // Add to local table first
+        this.renderTableItems();
         
         window.peacefulConnect.dataConnection.send({
           type: 'special-ring-delivery',
-          tableItem: itemToSend
+          tableItem: ringData
         });
       } else {
         window.peacefulConnect.dataConnection.send({
@@ -314,10 +325,76 @@ class CafeManager {
       }
     }
 
-    // Add delay before triggering animation
     setTimeout(() => {
       this.triggerFoodDeliveryAnimation(tableItem);
     }, 100);
+  }
+
+  receiveFoodDelivery(data) {
+    if (data.type === 'special-ring-delivery') {
+      const ringData = {
+        ...data.tableItem,
+        item: {
+          ...data.tableItem.item,
+          icon: 'images/ring.gif',
+          isSpecial: true
+        }
+      };
+      
+      // Add ring to table items before animation
+      if (!this.tableItems.find(i => i.id === ringData.id)) {
+        this.tableItems.push(ringData);
+        this.renderTableItems();
+      }
+      
+      this.triggerSpecialRingAnimation(ringData);
+    } else {
+      if (!this.tableItems.find(i => i.id === data.tableItem.id)) {
+        this.tableItems.push(data.tableItem);
+        this.renderTableItems();
+      }
+      this.triggerFoodDeliveryAnimation(data.tableItem);
+    }
+  }
+
+  triggerSpecialRingAnimation(tableItem) {
+    const ringImagePath = 'images/ring.gif';
+
+    const specialEffects = document.createElement('div');
+    specialEffects.className = 'special-effects';
+    document.body.appendChild(specialEffects);
+
+    // Create floating hearts
+    for (let i = 0; i < 50; i++) {
+      const heart = document.createElement('div');
+      heart.className = 'floating-heart';
+      heart.innerHTML = ['💝', '💖', '💗', '💓', '💘', '💕', '❤️', '💞', '💟', '💌'][Math.floor(Math.random() * 10)];
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.animationDelay = Math.random() * 3 + 's';
+      specialEffects.appendChild(heart);
+    }
+
+    // Create and animate ring delivery
+    const ringDelivery = document.createElement('div');
+    ringDelivery.className = 'ring-delivery';
+    ringDelivery.style.backgroundImage = `url(${ringImagePath})`;
+    document.body.appendChild(ringDelivery);
+
+    // Animate to table
+    setTimeout(() => {
+      const tableArea = document.querySelector('.virtual-table-area');
+      const tableRect = tableArea.getBoundingClientRect();
+      
+      ringDelivery.style.left = `${tableRect.left + tableRect.width/2 - 100}px`;
+      ringDelivery.style.top = `${tableRect.top + tableRect.height/2 - 100}px`;
+      ringDelivery.style.transform = 'translate(-50%, -50%) scale(1.2)';
+    }, 100);
+
+    // Clean up animation elements
+    setTimeout(() => {
+      ringDelivery.remove();
+      specialEffects.remove();
+    }, 3000);
   }
 
   triggerFoodDeliveryAnimation(tableItem) {
@@ -362,75 +439,6 @@ class CafeManager {
         this.renderTableItems();
       }
     }, 2000);
-  }
-
-  triggerSpecialRingAnimation(tableItem) {
-    // Always use the correct path for ring image
-    const ringImagePath = 'images/ring.gif';
-
-    const specialEffects = document.createElement('div');
-    specialEffects.className = 'special-effects';
-    document.body.appendChild(specialEffects);
-
-    for (let i = 0; i < 50; i++) {
-      const heart = document.createElement('div');
-      heart.className = 'floating-heart';
-      heart.innerHTML = ['💝', '💖', '💗', '💓', '💘', '💕', '❤️', '💞', '💟', '💌'][Math.floor(Math.random() * 10)];
-      heart.style.left = Math.random() * 100 + 'vw';
-      heart.style.animationDelay = Math.random() * 3 + 's';
-      specialEffects.appendChild(heart);
-    }
-
-    document.body.style.transition = 'background-color 2s ease';
-    document.body.style.backgroundColor = '#FFE4E1';  
-
-    const ringDelivery = document.createElement('div');
-    ringDelivery.className = 'ring-delivery';
-    ringDelivery.style.backgroundImage = `url(${ringImagePath})`;
-
-    document.body.appendChild(ringDelivery);
-
-    setTimeout(() => {
-      const tableArea = document.querySelector('.virtual-table-area');
-      const tableRect = tableArea.getBoundingClientRect();
-      
-      ringDelivery.style.left = `${tableRect.left + tableRect.width/2 - 100}px`;
-      ringDelivery.style.top = `${tableRect.top + tableRect.height/2 - 100}px`;
-      ringDelivery.style.transform = 'translate(-50%, -50%) scale(1.2)';
-    }, 100);
-
-    setTimeout(() => {
-      document.body.style.backgroundColor = '';  
-      ringDelivery.remove();
-      specialEffects.remove();
-      
-      if (!this.tableItems.find(i => i.id === tableItem.id)) {
-        this.tableItems.push({
-          ...tableItem,
-          item: {
-            ...tableItem.item,
-            icon: ringImagePath // Ensure consistent path in table items
-          }
-        });
-        this.renderTableItems();
-      }
-    }, 15000);  
-  }
-
-  receiveFoodDelivery(data) {
-    if (data.type === 'special-ring-delivery') {
-      // Ensure the received data has the correct image path
-      const tableItem = {
-        ...data.tableItem,
-        item: {
-          ...data.tableItem.item,
-          icon: 'images/ring.gif' // Always use the correct path
-        }
-      };
-      this.triggerSpecialRingAnimation(tableItem);
-    } else {
-      this.triggerFoodDeliveryAnimation(data.tableItem);
-    }
   }
 }
 
