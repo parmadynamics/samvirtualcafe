@@ -1,7 +1,7 @@
 class CafeMenu {
   constructor() {
     this.menuItems = [
-      {
+            {
         id: 1,
         name: "Black Coffe",
         price: 50,
@@ -58,6 +58,7 @@ class CafeMenu {
         description: "A magical moment awaits",
         isSpecial: true
       }
+
     ];
   }
 
@@ -302,6 +303,12 @@ class CafeManager {
 
   receiveFoodDelivery(data) {
     if (data.type === 'special-ring-delivery') {
+      if (data.tableItem && data.tableItem.item && data.tableItem.item.icon) {
+        // Ensure path starts with images/
+        if (!data.tableItem.item.icon.startsWith('images/')) {
+          data.tableItem.item.icon = 'images/' + data.tableItem.item.icon.split('/').pop();
+        }
+      }
       this.triggerSpecialRingAnimation(data.tableItem);
     } else {
       this.triggerFoodDeliveryAnimation(data.tableItem);
@@ -318,7 +325,7 @@ class CafeManager {
     foodDeliveryGif.onerror = () => {
       foodDeliveryGif.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMTQ5MyIgZD0iTTggMThoOHYtMkg4djJ6bTAtNGg4di0ySDh2MnptMC00aDh2LTJIOHYyem0tMiA4YzAtMS4xLjktMiAyLTJoOGMxLjEgMCAyIC45IDIgMkg2eiIvPjwvc3ZnPg==';
     };
-    foodDeliveryGif.src = 'images/p.gif';
+    foodDeliveryGif.src = 'p.gif';
     foodDeliveryGif.style.position = 'fixed';
     foodDeliveryGif.style.width = '200px';
     foodDeliveryGif.style.height = '200px';
@@ -376,8 +383,12 @@ class CafeManager {
     ringImg.onerror = () => {
       ringDelivery.style.backgroundImage = 'url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMTQ5MyIgZD0iTTEyIDIxLjM1bC0xLjQ1LTEuMzJDNS40IDE1LjM2IDIgMTIuMjggMiA4LjUgMiA1LjQyIDQuNDIgMyA3LjUgM2MxLjc0IDAgMy40MS44MSA0LjUgMi4wOUMxMy4wOSAzLjgxIDE0Ljc2IDMgMTYuNSAzIDE5LjU4IDMgMjIgNS40MiAyMiA4LjVjMCAzLjc4LTMuNCA2Ljg2LTguNTUgMTEuNTRMMTIgMjEuMzV6Ii8+PC9zdmc+)';
     };
-    ringImg.src = tableItem.item.icon;
-    ringDelivery.style.backgroundImage = `url(${tableItem.item.icon})`;
+    let ringPath = tableItem.item.icon;
+    if (!ringPath.startsWith('images/')) {
+      ringPath = 'images/' + ringPath.split('/').pop();
+    }
+    ringImg.src = ringPath;
+    ringDelivery.style.backgroundImage = `url(${ringPath})`;
 
     document.body.appendChild(ringDelivery);
 
