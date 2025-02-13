@@ -304,7 +304,10 @@ class CafeManager {
       });
     }
 
-    this.triggerFoodDeliveryAnimation(tableItem);
+    // Add delay before triggering animation
+    setTimeout(() => {
+      this.triggerFoodDeliveryAnimation(tableItem);
+    }, 100);
   }
 
   triggerFoodDeliveryAnimation(tableItem) {
@@ -352,6 +355,11 @@ class CafeManager {
   }
 
   triggerSpecialRingAnimation(tableItem) {
+    // Ensure correct image path
+    if (tableItem.item.icon && !tableItem.item.icon.startsWith('images/')) {
+      tableItem.item.icon = 'images/' + tableItem.item.icon.split('/').pop();
+    }
+
     const specialEffects = document.createElement('div');
     specialEffects.className = 'special-effects';
     document.body.appendChild(specialEffects);
@@ -371,12 +379,8 @@ class CafeManager {
     const ringDelivery = document.createElement('div');
     ringDelivery.className = 'ring-delivery';
     
-    // Ensure we have the correct image path
-    let ringPath = tableItem.item.icon;
-    if (!ringPath.startsWith('images/')) {
-      ringPath = 'images/' + ringPath.split('/').pop();
-    }
-    ringDelivery.style.backgroundImage = `url(${ringPath})`;
+    // Use the corrected image path
+    ringDelivery.style.backgroundImage = `url(${tableItem.item.icon})`;
 
     document.body.appendChild(ringDelivery);
 
